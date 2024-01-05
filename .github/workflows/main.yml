@@ -1,0 +1,20 @@
+name: Update YAML
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  update-yaml:
+    runs-on: ubuntu-latest
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/deploy')
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.issue.pull_request.base.ref }}
+
+      - name: Print Name of Base Branch
+        run: |
+          branch_name=$(git rev-parse --abbrev-ref HEAD)
+          echo "Base branch is $branch_name"
