@@ -11,10 +11,24 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.issue.pull_request.base.ref }}
 
-      - name: Print Name of Base Branch
+      - name: Fetch PR Base Branch
+        id: pr-info
+        run: |
+          PR_DATA=$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.issue.number }})
+          PR_BASE=$(echo "$PR_DATA" | jq -r .base.ref)
+          echo "Base branch of PR: $PR_BASE"
+          echo "::set-output name=base_ref::$PR_BASE"
+
+      - name: Checkout Base Branch of PR
+        if: steps.pr-info.outputs.base_ref
+        run: |
+          git fetch origin ${steps.pr-info.outputs.base_ref}:${steps.pr-info.outputs.base_ref}
+          git checkout ${steps.pr-info.outputs.base_ref}
+
+      - name: Print Name of Checked Out Branch
         run: |
           branch_name=$(git rev-parse --abbrev-ref HEAD)
-          echo "Base branch is $branch_name"
+          echo "Checked out branch is $branch_name"
+
